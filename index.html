@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141218">
+<title>XR Ring</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+/* ================= Material 3 tokens (seed-derived at runtime) ===== */
+:root{
+  --md-radius-s:8px; --md-radius-m:12px; --md-radius-l:16px;
+  --md-radius-xl:28px;
+  --elev1:0 1px 2px rgba(0,0,0,.3),0 1px 3px 1px rgba(0,0,0,.15);
+  font-family:'Roboto Flex','Roboto','Segoe UI',system-ui,sans-serif;
+}
+html,body{margin:0;height:100%;}
+body{
+  background:var(--surface); color:var(--on-surface);
+  -webkit-tap-highlight-color:transparent;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  transition:background .3s,color .3s;
+  overscroll-behavior:none;
+}
+/* ---------- top app bar ---------- */
+.appbar{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px 10px;position:sticky;top:0;z-index:10;
+  background:color-mix(in srgb,var(--surface) 92%,var(--primary) 8%);
+}
+.appbar h1{font-size:22px;font-weight:500;margin:0;flex:1;letter-spacing:0}
+.iconbtn{
+  width:48px;height:48px;border:none;border-radius:50%;
+  background:transparent;color:var(--on-surface-var);
+  font-size:22px;display:flex;align-items:center;justify-content:center;
+}
+.iconbtn:active{background:color-mix(in srgb,var(--on-surface) 12%,transparent)}
+.linkchip{
+  display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;
+  padding:6px 12px;border-radius:8px;
+  background:var(--surface-2);color:var(--on-surface-var);
+}
+.linkchip .dot{width:8px;height:8px;border-radius:50%;background:var(--error)}
+.linkchip.on .dot{background:var(--ok)}
+/* ---------- pages ---------- */
+main{padding:4px 16px 96px;max-width:520px;margin:0 auto}
+.page{display:none}
+.page.active{display:block;animation:fadein .18s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+/* ---------- cards ---------- */
+.card{
+  background:var(--surface-1);border-radius:var(--md-radius-l);
+  padding:16px;margin:12px 0;
+}
+.card h3{
+  margin:0 0 12px;font-size:14px;font-weight:500;
+  color:var(--on-surface-var);letter-spacing:.1px;
+}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+/* ---------- hero battery ---------- */
+.hero{display:flex;align-items:center;gap:20px;padding:8px 4px}
+.gauge{position:relative;width:120px;height:120px;flex:none}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .pct{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.gauge .pct b{font-size:28px;font-weight:600}
+.gauge .pct span{font-size:11px;color:var(--on-surface-var)}
+.hero .facts{flex:1;min-width:0}
+.fact{display:flex;justify-content:space-between;padding:5px 0;font-size:14px;
+  border-bottom:1px solid color-mix(in srgb,var(--outline) 30%,transparent)}
+.fact:last-child{border-bottom:none}
+.fact span{color:var(--on-surface-var)}
+.fact b{font-weight:500;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ---------- M3 buttons ---------- */
+.btn{
+  border:none;border-radius:var(--md-radius-xl);padding:12px 22px;
+  font-size:14px;font-weight:500;font-family:inherit;
+  background:var(--primary);color:var(--on-primary);
+  transition:box-shadow .15s;
+}
+.btn:active{box-shadow:var(--elev1)}
+.btn.tonal{background:var(--secondary-c);color:var(--on-secondary-c)}
+.btn.text{background:transparent;color:var(--primary);padding:12px 14px}
+.btn:disabled{opacity:.38}
+.btn.small{padding:8px 16px;font-size:13px}
+/* segmented (profiles) */
+.segmented{display:flex;border:1px solid var(--outline);border-radius:var(--md-radius-xl);overflow:hidden}
+.segmented button{
+  flex:1;border:none;background:transparent;color:var(--on-surface);
+  padding:12px 0;font-size:14px;font-family:inherit;
+  border-left:1px solid var(--outline);
+}
+.segmented button:first-child{border-left:none}
+.segmented button.sel{background:var(--secondary-c);color:var(--on-secondary-c);font-weight:600}
+/* media grid */
+.mediagrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mediagrid .btn{padding:16px 0;font-size:20px}
+/* host list */
+.hostrow{
+  display:flex;align-items:center;gap:12px;padding:12px 4px;
+  border-bottom:1px solid color-mix(in srgb,var(--outline) 30%,transparent);
+}
+.hostrow:last-child{border-bottom:none}
+.hostrow .addr{flex:1;font-size:13px;font-family:monospace}
+/* text fields (M3 outlined) */
+.field{position:relative;margin:14px 0}
+.field input{
+  width:100%;box-sizing:border-box;padding:14px;font-size:15px;
+  font-family:inherit;color:var(--on-surface);
+  background:transparent;border:1px solid var(--outline);
+  border-radius:var(--md-radius-s);outline:none;
+}
+.field input:focus{border:2px solid var(--primary);padding:13px}
+.field label{
+  position:absolute;left:10px;top:-8px;font-size:12px;padding:0 4px;
+  background:var(--surface-1);color:var(--on-surface-var);
+}
+.field input:focus+label{color:var(--primary)}
+/* console */
+.console{
+  font-family:'Roboto Mono',monospace;font-size:11.5px;line-height:1.55;
+  background:var(--surface-2);border-radius:var(--md-radius-m);
+  padding:12px;height:46vh;overflow-y:auto;white-space:pre-wrap;
+  word-break:break-all;
+}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:8px 0;scrollbar-width:none}
+.chip{
+  border:1px solid var(--outline);background:transparent;
+  color:var(--on-surface);border-radius:8px;padding:8px 14px;
+  font-size:13px;font-family:inherit;white-space:nowrap;
+}
+.chip:active{background:var(--secondary-c)}
+/* switch (M3) */
+.switch{position:relative;width:52px;height:32px;flex:none}
+.switch input{opacity:0;width:100%;height:100%;margin:0;position:absolute;z-index:2}
+.switch .track{
+  position:absolute;inset:0;border-radius:16px;transition:.2s;
+  background:var(--surface-2);border:2px solid var(--outline);
+}
+.switch .thumb{
+  position:absolute;top:8px;left:8px;width:16px;height:16px;border-radius:50%;
+  background:var(--outline);transition:.2s;
+}
+.switch input:checked~.track{background:var(--primary);border-color:var(--primary)}
+.switch input:checked~.thumb{left:28px;width:24px;height:24px;top:4px;background:var(--on-primary)}
+/* bottom navigation (M3) */
+nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:10;
+  display:flex;justify-content:space-around;
+  background:color-mix(in srgb,var(--surface) 92%,var(--primary) 8%);
+  padding:8px 0 max(12px,env(safe-area-inset-bottom));
+}
+nav button{
+  border:none;background:transparent;color:var(--on-surface-var);
+  font-size:11px;font-weight:500;font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:4px;width:72px;
+}
+nav button .ico{
+  font-size:20px;padding:4px 18px;border-radius:16px;transition:background .2s;
+}
+nav button.sel{color:var(--on-surface)}
+nav button.sel .ico{background:var(--secondary-c)}
+/* settings sheet */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;display:none}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:21;display:none;
+  background:var(--surface-1);border-radius:28px 28px 0 0;
+  padding:8px 24px max(24px,env(safe-area-inset-bottom));
+  max-width:520px;margin:0 auto;
+}
+.sheet .handle{width:32px;height:4px;border-radius:2px;background:var(--outline);margin:8px auto 16px}
+.sheet.open,.scrim.open{display:block}
+.seeds{display:flex;gap:14px;padding:6px 0 2px}
+.seed{width:44px;height:44px;border-radius:50%;border:2px solid transparent}
+.seed.sel{border-color:var(--on-surface);box-shadow:0 0 0 3px var(--surface-1) inset}
+/* connect splash */
+#splash{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:70vh;text-align:center;gap:18px;padding:0 32px;
+}
+#splash .ringlogo{font-size:64px}
+#splash p{color:var(--on-surface-var);font-size:14px;line-height:1.5;margin:0}
+.spin{
+  width:28px;height:28px;border-radius:50%;
+  border:3px solid var(--secondary-c);border-top-color:var(--primary);
+  animation:spin .8s linear infinite;display:none;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:30;
+  background:var(--inverse-surface);color:var(--inverse-on-surface);
+  border-radius:8px;padding:12px 18px;font-size:13px;max-width:80vw;
+  opacity:0;transition:opacity .25s;pointer-events:none;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <h1>XR Ring</h1>
+  <div class="linkchip" id="linkChip"><span class="dot"></span><span id="linkTxt">disconnected</span></div>
+  <button class="iconbtn" id="btnSettings" aria-label="Settings">&#9881;</button>
+</header>
+
+<main>
+  <!-- splash / connect -->
+  <div id="splash">
+    <div class="ringlogo">&#9678;</div>
+    <p><b>Connect your XR Ring</b></p>
+    <p>The ring must be powered on. If it was never paired with this
+       phone, open its pairing window first (triple power-flick).</p>
+    <button class="btn" id="btnConnect">Connect ring</button>
+    <button class="btn text" id="btnConnectAny">Ring not listed? Show all devices</button>
+    <div class="spin" id="spin"></div>
+  </div>
+
+  <!-- STATUS -->
+  <section class="page" id="page-status">
+    <div class="card">
+      <div class="hero">
+        <div class="gauge">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--surface-2)" stroke-width="10"/>
+            <circle id="gArc" cx="60" cy="60" r="52" fill="none" stroke="var(--primary)"
+              stroke-width="10" stroke-linecap="round" stroke-dasharray="327" stroke-dashoffset="327"/>
+          </svg>
+          <div class="pct"><b id="batPct">--%</b><span id="batV">-- V</span></div>
+        </div>
+        <div class="facts">
+          <div class="fact"><span>firmware</span><b id="fFw">—</b></div>
+          <div class="fact"><span>power</span><b id="fPwr">—</b></div>
+          <div class="fact"><span>telemetry</span><b id="fTel">—</b></div>
+          <div class="fact"><span>profile</span><b id="fProf">—</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Sensors</h3>
+      <div class="fact"><span>trackpoint</span><b id="sTp">—</b></div>
+      <div class="fact"><span>scroll</span><b id="sSc">—</b></div>
+      <div class="fact"><span>inertial</span><b id="sImu">—</b></div>
+      <div class="fact"><span>touch</span><b id="sTo">—</b></div>
+    </div>
+    <div class="card">
+      <h3>Connected hosts (from the ring)</h3>
+      <div id="hostList" style="font-size:13px;color:var(--on-surface-var)">refresh to load</div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn tonal small" id="btnHosts">Refresh</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTROL -->
+  <section class="page" id="page-control">
+    <div class="card">
+      <h3>Binding profile</h3>
+      <div class="segmented" id="profSeg">
+        <button data-p="0">P0</button><button data-p="1">P1</button>
+        <button data-p="2">P2</button><button data-p="3">P3</button>
+      </div>
+      <p style="font-size:12px;color:var(--on-surface-var);margin:10px 2px 0">
+        Profiles are snapshots of the whole binding table, stored on the
+        ring. Edit and save them from the bench.</p>
+    </div>
+    <div class="card">
+      <h3>Active host — who receives input</h3>
+      <div id="kvmList" style="font-size:13px;color:var(--on-surface-var)">refresh hosts on Status page</div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn tonal small" id="btnAllHosts">Broadcast to all</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Media remote (sends to the ring's type target)</h3>
+      <div class="mediagrid">
+        <button class="btn tonal" data-cc="voldn">&#128265;</button>
+        <button class="btn" data-cc="play">&#9199;</button>
+        <button class="btn tonal" data-cc="volup">&#128266;</button>
+        <button class="btn tonal" data-cc="prev">&#9198;</button>
+        <button class="btn tonal" data-cc="mute">&#128263;</button>
+        <button class="btn tonal" data-cc="next">&#9197;</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn small" data-cc="camera">&#128247; Camera shutter</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MACROS -->
+  <section class="page" id="page-macros">
+    <div class="card">
+      <h3>On-ring macros — typed by the ring on any host</h3>
+      <div class="field"><input id="mac1" maxlength="90"><label>Macro 1 (bind MACRO_1)</label></div>
+      <div class="field"><input id="mac2" maxlength="90"><label>Macro 2</label></div>
+      <div class="field"><input id="mac3" maxlength="90"><label>Macro 3</label></div>
+      <div class="field"><input id="mac4" maxlength="90"><label>Macro 4</label></div>
+      <div class="row">
+        <button class="btn" id="btnMacSave">Store on ring</button>
+      </div>
+      <p style="font-size:12px;color:var(--on-surface-var)">
+        Stored in the ring's flash — they work with zero software on
+        every host. Don't store passwords (plain text).</p>
+    </div>
+  </section>
+
+  <!-- CONSOLE -->
+  <section class="page" id="page-console">
+    <div class="chips" id="quickChips">
+      <button class="chip" data-cmd="?">version</button>
+      <button class="chip" data-cmd="f">health</button>
+      <button class="chip" data-cmd="storage">memory</button>
+      <button class="chip" data-cmd="useprof">profiles</button>
+      <button class="chip" data-cmd="active">active host</button>
+      <button class="chip" data-cmd="selftest">self-test</button>
+    </div>
+    <div class="console" id="console"></div>
+    <div class="field" style="margin-top:12px">
+      <input id="cmdIn" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <label>command</label>
+    </div>
+  </section>
+</main>
+
+<nav id="nav">
+  <button data-page="status" class="sel"><span class="ico">&#9679;</span>Status</button>
+  <button data-page="control"><span class="ico">&#127899;</span>Control</button>
+  <button data-page="macros"><span class="ico">&#9000;</span>Macros</button>
+  <button data-page="console"><span class="ico">&#8250;_</span>Console</button>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="handle"></div>
+  <h3 style="margin:0 0 6px;font-size:16px;font-weight:500">Settings</h3>
+  <div class="row" style="justify-content:space-between;padding:12px 0">
+    <span style="font-size:14px">Accent color</span>
+  </div>
+  <div class="seeds" id="seeds"></div>
+  <div class="row" style="justify-content:space-between;padding:16px 0 6px">
+    <div>
+      <div style="font-size:14px">Auto&nbsp;<b>hello android</b> on connect</div>
+      <div style="font-size:12px;color:var(--on-surface-var)">applies your Android profile automatically</div>
+    </div>
+    <label class="switch"><input type="checkbox" id="swHello"><span class="track"></span><span class="thumb"></span></label>
+  </div>
+  <div class="row" style="padding-top:14px">
+    <button class="btn tonal" id="btnDisconnect">Disconnect</button>
+    <span style="flex:1"></span>
+    <span style="font-size:11px;color:var(--on-surface-var)" id="appVer"></span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
