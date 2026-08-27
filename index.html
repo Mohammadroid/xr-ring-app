@@ -2,360 +2,609 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#141218">
+<meta name="mobile-web-app-capable" content="yes">
 <title>XR Ring</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<style>
-/* ================= Material 3 tokens (seed-derived at runtime) ===== */
-:root{
-  --md-radius-s:8px; --md-radius-m:12px; --md-radius-l:16px;
-  --md-radius-xl:28px;
-  --elev1:0 1px 2px rgba(0,0,0,.3),0 1px 3px 1px rgba(0,0,0,.15);
-  font-family:'Roboto Flex','Roboto','Segoe UI',system-ui,sans-serif;
-}
-html,body{margin:0;height:100%;}
-body{
-  background:var(--surface); color:var(--on-surface);
-  -webkit-tap-highlight-color:transparent;
-  padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
-  transition:background .3s,color .3s;
-  overscroll-behavior:none;
-}
-/* ---------- top app bar ---------- */
-.appbar{
-  display:flex;align-items:center;gap:12px;
-  padding:14px 16px 10px;position:sticky;top:0;z-index:10;
-  background:color-mix(in srgb,var(--surface) 92%,var(--primary) 8%);
-}
-.appbar h1{font-size:22px;font-weight:500;margin:0;flex:1;letter-spacing:0}
-.iconbtn{
-  width:48px;height:48px;border:none;border-radius:50%;
-  background:transparent;color:var(--on-surface-var);
-  font-size:22px;display:flex;align-items:center;justify-content:center;
-}
-.iconbtn:active{background:color-mix(in srgb,var(--on-surface) 12%,transparent)}
-.linkchip{
-  display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;
-  padding:6px 12px;border-radius:8px;
-  background:var(--surface-2);color:var(--on-surface-var);
-}
-.linkchip .dot{width:8px;height:8px;border-radius:50%;background:var(--error)}
-.linkchip.on .dot{background:var(--ok)}
-/* ---------- pages ---------- */
-main{padding:4px 16px 96px;max-width:520px;margin:0 auto}
-.page{display:none}
-.page.active{display:block;animation:fadein .18s ease}
-@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
-/* ---------- cards ---------- */
-.card{
-  background:var(--surface-1);border-radius:var(--md-radius-l);
-  padding:16px;margin:12px 0;
-}
-.card h3{
-  margin:0 0 12px;font-size:14px;font-weight:500;
-  color:var(--on-surface-var);letter-spacing:.1px;
-}
-.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-/* ---------- hero battery ---------- */
-.hero{display:flex;align-items:center;gap:20px;padding:8px 4px}
-.gauge{position:relative;width:120px;height:120px;flex:none}
-.gauge svg{transform:rotate(-90deg)}
-.gauge .pct{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-}
-.gauge .pct b{font-size:28px;font-weight:600}
-.gauge .pct span{font-size:11px;color:var(--on-surface-var)}
-.hero .facts{flex:1;min-width:0}
-.fact{display:flex;justify-content:space-between;padding:5px 0;font-size:14px;
-  border-bottom:1px solid color-mix(in srgb,var(--outline) 30%,transparent)}
-.fact:last-child{border-bottom:none}
-.fact span{color:var(--on-surface-var)}
-.fact b{font-weight:500;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* ---------- M3 buttons ---------- */
-.btn{
-  border:none;border-radius:var(--md-radius-xl);padding:12px 22px;
-  font-size:14px;font-weight:500;font-family:inherit;
-  background:var(--primary);color:var(--on-primary);
-  transition:box-shadow .15s;
-}
-.btn:active{box-shadow:var(--elev1)}
-.btn.tonal{background:var(--secondary-c);color:var(--on-secondary-c)}
-.btn.text{background:transparent;color:var(--primary);padding:12px 14px}
-.btn:disabled{opacity:.38}
-.btn.small{padding:8px 16px;font-size:13px}
-/* segmented (profiles) */
-.segmented{display:flex;border:1px solid var(--outline);border-radius:var(--md-radius-xl);overflow:hidden}
-.segmented button{
-  flex:1;border:none;background:transparent;color:var(--on-surface);
-  padding:12px 0;font-size:14px;font-family:inherit;
-  border-left:1px solid var(--outline);
-}
-.segmented button:first-child{border-left:none}
-.segmented button.sel{background:var(--secondary-c);color:var(--on-secondary-c);font-weight:600}
-/* media grid */
-.mediagrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.mediagrid .btn{padding:16px 0;font-size:20px}
-/* host list */
-.hostrow{
-  display:flex;align-items:center;gap:12px;padding:12px 4px;
-  border-bottom:1px solid color-mix(in srgb,var(--outline) 30%,transparent);
-}
-.hostrow:last-child{border-bottom:none}
-.hostrow .addr{flex:1;font-size:13px;font-family:monospace}
-/* text fields (M3 outlined) */
-.field{position:relative;margin:14px 0}
-.field input{
-  width:100%;box-sizing:border-box;padding:14px;font-size:15px;
-  font-family:inherit;color:var(--on-surface);
-  background:transparent;border:1px solid var(--outline);
-  border-radius:var(--md-radius-s);outline:none;
-}
-.field input:focus{border:2px solid var(--primary);padding:13px}
-.field label{
-  position:absolute;left:10px;top:-8px;font-size:12px;padding:0 4px;
-  background:var(--surface-1);color:var(--on-surface-var);
-}
-.field input:focus+label{color:var(--primary)}
-/* console */
-.console{
-  font-family:'Roboto Mono',monospace;font-size:11.5px;line-height:1.55;
-  background:var(--surface-2);border-radius:var(--md-radius-m);
-  padding:12px;height:46vh;overflow-y:auto;white-space:pre-wrap;
-  word-break:break-all;
-}
-.chips{display:flex;gap:8px;overflow-x:auto;padding:8px 0;scrollbar-width:none}
-.chip{
-  border:1px solid var(--outline);background:transparent;
-  color:var(--on-surface);border-radius:8px;padding:8px 14px;
-  font-size:13px;font-family:inherit;white-space:nowrap;
-}
-.chip:active{background:var(--secondary-c)}
-/* switch (M3) */
-.switch{position:relative;width:52px;height:32px;flex:none}
-.switch input{opacity:0;width:100%;height:100%;margin:0;position:absolute;z-index:2}
-.switch .track{
-  position:absolute;inset:0;border-radius:16px;transition:.2s;
-  background:var(--surface-2);border:2px solid var(--outline);
-}
-.switch .thumb{
-  position:absolute;top:8px;left:8px;width:16px;height:16px;border-radius:50%;
-  background:var(--outline);transition:.2s;
-}
-.switch input:checked~.track{background:var(--primary);border-color:var(--primary)}
-.switch input:checked~.thumb{left:28px;width:24px;height:24px;top:4px;background:var(--on-primary)}
-/* bottom navigation (M3) */
-nav{
-  position:fixed;left:0;right:0;bottom:0;z-index:10;
-  display:flex;justify-content:space-around;
-  background:color-mix(in srgb,var(--surface) 92%,var(--primary) 8%);
-  padding:8px 0 max(12px,env(safe-area-inset-bottom));
-}
-nav button{
-  border:none;background:transparent;color:var(--on-surface-var);
-  font-size:11px;font-weight:500;font-family:inherit;
-  display:flex;flex-direction:column;align-items:center;gap:4px;width:72px;
-}
-nav button .ico{
-  font-size:20px;padding:4px 18px;border-radius:16px;transition:background .2s;
-}
-nav button.sel{color:var(--on-surface)}
-nav button.sel .ico{background:var(--secondary-c)}
-/* settings sheet */
-.scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;display:none}
-.sheet{
-  position:fixed;left:0;right:0;bottom:0;z-index:21;display:none;
-  background:var(--surface-1);border-radius:28px 28px 0 0;
-  padding:8px 24px max(24px,env(safe-area-inset-bottom));
-  max-width:520px;margin:0 auto;
-}
-.sheet .handle{width:32px;height:4px;border-radius:2px;background:var(--outline);margin:8px auto 16px}
-.sheet.open,.scrim.open{display:block}
-.seeds{display:flex;gap:14px;padding:6px 0 2px}
-.seed{width:44px;height:44px;border-radius:50%;border:2px solid transparent}
-.seed.sel{border-color:var(--on-surface);box-shadow:0 0 0 3px var(--surface-1) inset}
-/* connect splash */
-#splash{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:70vh;text-align:center;gap:18px;padding:0 32px;
-}
-#splash .ringlogo{font-size:64px}
-#splash p{color:var(--on-surface-var);font-size:14px;line-height:1.5;margin:0}
-.spin{
-  width:28px;height:28px;border-radius:50%;
-  border:3px solid var(--secondary-c);border-top-color:var(--primary);
-  animation:spin .8s linear infinite;display:none;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.toast{
-  position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:30;
-  background:var(--inverse-surface);color:var(--inverse-on-surface);
-  border-radius:8px;padding:12px 18px;font-size:13px;max-width:80vw;
-  opacity:0;transition:opacity .25s;pointer-events:none;
-}
-.toast.show{opacity:1}
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header class="appbar">
-  <h1>XR Ring</h1>
-  <div class="linkchip" id="linkChip"><span class="dot"></span><span id="linkTxt">disconnected</span></div>
-  <button class="iconbtn" id="btnSettings" aria-label="Settings">&#9881;</button>
+  <div class="bar">
+    <h1 id="barTitle">XR Ring</h1>
+    <div class="linkchip" id="linkChip"><span class="dot"></span><span id="linkTxt">offline</span></div>
+    <button class="iconbtn" id="btnSheet" aria-label="Settings">&#9881;</button>
+  </div>
+  <div class="subtabs" id="subtabs"></div>
 </header>
 
 <main>
-  <!-- splash / connect -->
-  <div id="splash">
-    <div class="ringlogo">&#9678;</div>
-    <p><b>Connect your XR Ring</b></p>
-    <p>The ring must be powered on. If it was never paired with this
-       phone, open its pairing window first (triple power-flick).</p>
-    <button class="btn" id="btnConnect">Connect ring</button>
-    <button class="btn text" id="btnConnectAny">Ring not listed? Show all devices</button>
-    <div class="spin" id="spin"></div>
+<!-- ============ splash ============ -->
+<div id="splash" class="on">
+  <div class="logo">&#9678;</div>
+  <h2>Connect your ring</h2>
+  <p>Power the ring on and tap connect. If this phone has never paired
+     with it, open the ring's pairing window first (triple power-flick,
+     or hold LFT+RHT for 3&nbsp;s).</p>
+  <button class="btn" id="btnConnect">Connect ring</button>
+  <button class="btn text" id="btnConnectAny">Not listed? Show all devices</button>
+  <div class="spin" id="spin"></div>
+  <p id="splashNote"></p>
+</div>
+
+<!-- ============ 1. OVERVIEW ============ -->
+<section class="page" id="p-overview">
+  <div class="card">
+    <div class="row" style="gap:16px;flex-wrap:nowrap">
+      <div style="position:relative;width:104px;height:104px;flex:none">
+        <svg width="104" height="104" viewBox="0 0 104 104" style="transform:rotate(-90deg)">
+          <circle cx="52" cy="52" r="45" fill="none" stroke="var(--surface-3)" stroke-width="9"/>
+          <circle id="gArc" cx="52" cy="52" r="45" fill="none" stroke="var(--primary)"
+            stroke-width="9" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:grid;place-items:center;text-align:center">
+          <div><b id="ovPct" style="font-size:24px">--</b>
+            <div id="ovV" style="font-size:10.5px;color:var(--on-surface-var)">--</div></div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="stat"><s>firmware</s><b id="ovFw">—</b></div>
+        <div class="stat"><s>uptime</s><b id="ovUp">—</b></div>
+        <div class="stat"><s>power</s><b id="ovPwr">—</b></div>
+        <div class="stat"><s>profile</s><b id="ovProf">—</b></div>
+      </div>
+    </div>
   </div>
 
-  <!-- STATUS -->
-  <section class="page" id="page-status">
-    <div class="card">
-      <div class="hero">
-        <div class="gauge">
-          <svg width="120" height="120" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--surface-2)" stroke-width="10"/>
-            <circle id="gArc" cx="60" cy="60" r="52" fill="none" stroke="var(--primary)"
-              stroke-width="10" stroke-linecap="round" stroke-dasharray="327" stroke-dashoffset="327"/>
-          </svg>
-          <div class="pct"><b id="batPct">--%</b><span id="batV">-- V</span></div>
-        </div>
-        <div class="facts">
-          <div class="fact"><span>firmware</span><b id="fFw">—</b></div>
-          <div class="fact"><span>power</span><b id="fPwr">—</b></div>
-          <div class="fact"><span>telemetry</span><b id="fTel">—</b></div>
-          <div class="fact"><span>profile</span><b id="fProf">—</b></div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Sensors</h3>
-      <div class="fact"><span>trackpoint</span><b id="sTp">—</b></div>
-      <div class="fact"><span>scroll</span><b id="sSc">—</b></div>
-      <div class="fact"><span>inertial</span><b id="sImu">—</b></div>
-      <div class="fact"><span>touch</span><b id="sTo">—</b></div>
-    </div>
-    <div class="card">
-      <h3>Connected hosts (from the ring)</h3>
-      <div id="hostList" style="font-size:13px;color:var(--on-surface-var)">refresh to load</div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn tonal small" id="btnHosts">Refresh</button>
-      </div>
-    </div>
-  </section>
+  <div class="card">
+    <h3>HID reports/s <span class="r badge" id="ovHidNow">—</span></h3>
+    <canvas class="chart" id="cvHid"></canvas>
+    <div class="legend"><span><i style="background:var(--primary)"></i>reports/s</span>
+      <span><i style="background:var(--error)"></i>queue drops</span></div>
+  </div>
 
-  <!-- CONTROL -->
-  <section class="page" id="page-control">
-    <div class="card">
-      <h3>Binding profile</h3>
-      <div class="segmented" id="profSeg">
-        <button data-p="0">P0</button><button data-p="1">P1</button>
-        <button data-p="2">P2</button><button data-p="3">P3</button>
-      </div>
-      <p style="font-size:12px;color:var(--on-surface-var);margin:10px 2px 0">
-        Profiles are snapshots of the whole binding table, stored on the
-        ring. Edit and save them from the bench.</p>
-    </div>
-    <div class="card">
-      <h3>Active host — who receives input</h3>
-      <div id="kvmList" style="font-size:13px;color:var(--on-surface-var)">refresh hosts on Status page</div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn tonal small" id="btnAllHosts">Broadcast to all</button>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Media remote (sends to the ring's type target)</h3>
-      <div class="mediagrid">
-        <button class="btn tonal" data-cc="voldn">&#128265;</button>
-        <button class="btn" data-cc="play">&#9199;</button>
-        <button class="btn tonal" data-cc="volup">&#128266;</button>
-        <button class="btn tonal" data-cc="prev">&#9198;</button>
-        <button class="btn tonal" data-cc="mute">&#128263;</button>
-        <button class="btn tonal" data-cc="next">&#9197;</button>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn small" data-cc="camera">&#128247; Camera shutter</button>
-      </div>
-    </div>
-  </section>
+  <div class="card">
+    <h3>Live activity</h3>
+    <div class="tiles c3" id="ovFlags"></div>
+    <p class="hint">Tiles flash when the ring emits that input right now.</p>
+  </div>
 
-  <!-- MACROS -->
-  <section class="page" id="page-macros">
-    <div class="card">
-      <h3>On-ring macros — typed by the ring on any host</h3>
-      <div class="field"><input id="mac1" maxlength="90"><label>Macro 1 (bind MACRO_1)</label></div>
-      <div class="field"><input id="mac2" maxlength="90"><label>Macro 2</label></div>
-      <div class="field"><input id="mac3" maxlength="90"><label>Macro 3</label></div>
-      <div class="field"><input id="mac4" maxlength="90"><label>Macro 4</label></div>
-      <div class="row">
-        <button class="btn" id="btnMacSave">Store on ring</button>
-      </div>
-      <p style="font-size:12px;color:var(--on-surface-var)">
-        Stored in the ring's flash — they work with zero software on
-        every host. Don't store passwords (plain text).</p>
+  <div class="card">
+    <h3>Subsystem health</h3>
+    <div id="ovHealth"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn tonal sm" data-cmd="f">refresh health</button>
+      <button class="btn outline sm" data-cmd="i">bus census</button>
+      <button class="btn outline sm" data-cmd="p">part IDs</button>
     </div>
-  </section>
+  </div>
 
-  <!-- CONSOLE -->
-  <section class="page" id="page-console">
-    <div class="chips" id="quickChips">
-      <button class="chip" data-cmd="?">version</button>
-      <button class="chip" data-cmd="f">health</button>
-      <button class="chip" data-cmd="storage">memory</button>
-      <button class="chip" data-cmd="useprof">profiles</button>
-      <button class="chip" data-cmd="active">active host</button>
-      <button class="chip" data-cmd="selftest">self-test</button>
+  <div class="card">
+    <h3>Latency (ring-internal)</h3>
+    <div class="mrow"><s>last</s><div class="meter"><i id="mLatL"></i></div><b id="vLatL">—</b></div>
+    <div class="mrow"><s>avg</s><div class="meter"><i id="mLatA"></i></div><b id="vLatA">—</b></div>
+    <div class="mrow"><s>max</s><div class="meter"><i id="mLatM"></i></div><b id="vLatM">—</b></div>
+    <p class="hint">Sensor interrupt → HID handoff. The radio adds one
+      connection interval on top.</p>
+  </div>
+</section>
+
+<!-- ============ 2. BATTERY ============ -->
+<section class="page" id="p-battery">
+  <div class="card">
+    <h3>Cell <span class="r badge" id="batState">—</span></h3>
+    <div style="font-size:34px;font-weight:600" id="batBigV">—</div>
+    <div class="meter" style="height:14px;border-radius:7px;margin:8px 0"><i id="batBar"></i></div>
+    <div class="stat"><s>charge</s><b id="batPct">—</b></div>
+    <div class="stat"><s>logic rail (VDD)</s><b id="batVdd">—</b></div>
+    <div class="stat"><s>die temperature</s><b id="batTmp">—</b></div>
+    <div class="stat"><s>CPU load</s><b id="batCpu">—</b></div>
+  </div>
+  <div class="card">
+    <h3>Discharge — this session</h3>
+    <canvas class="chart" id="cvBat"></canvas>
+    <p class="hint">Recorded live while the app is connected. The bench keeps
+      the long-term curve mined from its system log.</p>
+  </div>
+  <div class="card">
+    <h3>Tests</h3>
+    <div class="row">
+      <button class="btn tonal sm" data-cfg="selftest bat">battery self-test</button>
+      <button class="btn outline sm" data-cfg="selftest vdd">power rail</button>
     </div>
-    <div class="console" id="console"></div>
-    <div class="field" style="margin-top:12px">
-      <input id="cmdIn" autocomplete="off" autocapitalize="none" spellcheck="false">
-      <label>command</label>
+    <div id="batTest" class="hint"></div>
+    <p class="hint">Untethered the reading is the cell; on USB it shows the
+      charger rail (~4.2–4.7&nbsp;V) and the last real percentage is held.</p>
+  </div>
+</section>
+
+<!-- ============ 3. TRACKPOINT ============ -->
+<section class="page" id="p-tp">
+  <div class="card">
+    <h3>Deflection <span class="r badge" id="tpSamples">—</span></h3>
+    <canvas class="pad" id="cvTp"></canvas>
+    <div class="mrow"><s>press</s><div class="meter"><i id="mTpP"></i></div><b id="vTpP">—</b></div>
+  </div>
+  <div class="card">
+    <h3>Raw magnetometer</h3>
+    <div class="mrow"><s>X</s><div class="meter center"><i id="mTrx"></i></div><b id="vTrx">—</b></div>
+    <div class="mrow"><s>Y</s><div class="meter center"><i id="mTry"></i></div><b id="vTry">—</b></div>
+    <div class="mrow"><s>Z</s><div class="meter center"><i id="mTrz"></i></div><b id="vTrz">—</b></div>
+    <div class="stat"><s>last delta</s><b id="tpDelta">—</b></div>
+    <div class="stat"><s>probe / reconfigs</s><b id="tpProbe">—</b></div>
+  </div>
+  <div class="card">
+    <h3>Calibration</h3>
+    <div class="row">
+      <button class="btn sm" data-cmd="r">recenter (hands off)</button>
+      <button class="btn tonal sm" data-cfg="save">save to flash</button>
     </div>
-  </section>
+    <div class="grid2" style="margin-top:12px">
+      <div class="field"><input id="calRangexy" inputmode="numeric"><label>cal rangexy</label></div>
+      <div class="field"><input id="calRangez" inputmode="numeric"><label>cal rangez</label></div>
+      <div class="field"><input id="calPress" inputmode="numeric"><label>cal press (0-1000)</label></div>
+      <div class="field"><input id="calRelease" inputmode="numeric"><label>cal release</label></div>
+    </div>
+    <button class="btn wide sm" id="btnCalApply" style="margin-top:8px">apply calibration</button>
+    <p class="hint">Recenter with the stick untouched, then set ranges to the
+      counts you see at full deflection. Volatile until saved.</p>
+  </div>
+</section>
+
+<!-- ============ 4. IMU ============ -->
+<section class="page" id="p-imu">
+  <div class="card">
+    <h3>Orientation</h3>
+    <canvas class="pad" id="cvImu" style="aspect-ratio:1.6"></canvas>
+    <div class="grid3" style="margin-top:8px">
+      <div class="stat" style="border:0"><s>roll</s><b id="imRoll">—</b></div>
+      <div class="stat" style="border:0"><s>pitch</s><b id="imPitch">—</b></div>
+      <div class="stat" style="border:0"><s>yaw</s><b id="imYaw">—</b></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Angular rate</h3>
+    <div class="mrow"><s>gx</s><div class="meter center"><i id="mGx"></i></div><b id="vGx">—</b></div>
+    <div class="mrow"><s>gy</s><div class="meter center"><i id="mGy"></i></div><b id="vGy">—</b></div>
+    <div class="mrow"><s>gz</s><div class="meter center"><i id="mGz"></i></div><b id="vGz">—</b></div>
+  </div>
+  <div class="card">
+    <h3>Acceleration</h3>
+    <div class="mrow"><s>ax</s><div class="meter center"><i id="mAx"></i></div><b id="vAx">—</b></div>
+    <div class="mrow"><s>ay</s><div class="meter center"><i id="mAy"></i></div><b id="vAy">—</b></div>
+    <div class="mrow"><s>az</s><div class="meter center"><i id="mAz"></i></div><b id="vAz">—</b></div>
+    <canvas class="chart" id="cvImuA" style="margin-top:8px"></canvas>
+  </div>
+  <div class="card">
+    <h3>Driver</h3>
+    <div class="stat"><s>interrupt edges</s><b id="imEdges">—</b></div>
+    <div class="stat"><s>probe addr / attempts</s><b id="imProbe">—</b></div>
+    <div class="stat"><s>reconfigs</s><b id="imRec">—</b></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn tonal sm" data-cfg="selftest imu">test IMU</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. SCROLL · TOUCH ============ -->
+<section class="page" id="p-st">
+  <div class="card">
+    <h3>Optical scroll <span class="r badge" id="scSamples">—</span></h3>
+    <canvas class="chart" id="cvScroll"></canvas>
+    <div class="mrow"><s>dx</s><div class="meter center"><i id="mSdx"></i></div><b id="vSdx">—</b></div>
+    <div class="mrow"><s>dy</s><div class="meter center"><i id="mSdy"></i></div><b id="vSdy">—</b></div>
+    <div class="stat"><s>axis total</s><b id="scAcc">—</b></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn tonal sm" data-cfg="selftest scroll">test scroll</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Touch surface <span class="r badge" id="toFingers">—</span></h3>
+    <canvas class="pad" id="cvTouch"></canvas>
+    <div class="stat"><s>relative position</s><b id="toPos">—</b></div>
+    <div class="stat"><s>windows / frame errs</s><b id="toWin">—</b></div>
+  </div>
+  <div class="card">
+    <h3>Gestures</h3>
+    <div class="tiles c2" id="gestTiles"></div>
+    <p class="hint">Tiles flash when the ring reports that gesture. Bind any
+      of them on the Mapping page.</p>
+  </div>
+</section>
+
+<!-- ============ 6. BUTTONS ============ -->
+<section class="page" id="p-btn">
+  <div class="card">
+    <h3>5-way stick</h3>
+    <div class="tiles c3" id="btnStick"></div>
+  </div>
+  <div class="card">
+    <h3>Switches</h3>
+    <div class="tiles c2" id="btnAux"></div>
+  </div>
+  <div class="card">
+    <h3>Census &amp; self-test</h3>
+    <div class="row">
+      <button class="btn sm" data-cfg="btns">census</button>
+      <button class="btn tonal sm" data-cfg="btns test">chip self-test</button>
+    </div>
+    <div id="btnCensus" class="hint" style="font-family:var(--mono);white-space:pre-wrap"></div>
+    <p class="hint">Self-test drives each pin from the chip — it proves silicon
+      and firmware, not the external pad. A button that passes here but not
+      under your finger has a dead trace.</p>
+  </div>
+</section>
+
+<!-- ============ 7. AUDIO ============ -->
+<section class="page" id="p-audio">
+  <div class="card">
+    <h3>Microphone <span class="r badge" id="micState">—</span></h3>
+    <canvas class="chart" id="cvMic" style="height:110px"></canvas>
+    <div class="mrow"><s>peak</s><div class="meter"><i id="mPk"></i></div><b id="vPk">—</b></div>
+    <div class="mrow"><s>rms</s><div class="meter"><i id="mRms"></i></div><b id="vRms">—</b></div>
+    <div class="stat"><s>blocks / errors</s><b id="micBlk">—</b></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn tonal sm" data-cfg="selftest mic">test mic</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Wake word</h3>
+    <div class="stat"><s>templates enrolled</s><b id="kwN">—</b></div>
+    <div class="stat"><s>detections / utterances</s><b id="kwD">—</b></div>
+    <div class="stat"><s>last score / threshold</s><b id="kwS">—</b></div>
+    <div class="mrow"><s>VAD</s><div class="meter"><i id="mVad"></i></div><b id="vVad">—</b></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sm" data-cfg="kws enroll">enroll (speak now)</button>
+      <button class="btn outline sm" data-cfg="kws">status</button>
+      <button class="btn danger sm" data-cfg="kws clear">clear model</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="field" style="flex:1;margin:0"><input id="kwTh" inputmode="numeric"><label>threshold ×100 (0 = auto)</label></div>
+      <button class="btn tonal sm" id="btnKwTh">apply</button>
+    </div>
+    <p class="hint">Enroll three renditions, then <b>save</b> on the Settings
+      page to keep the model in flash.</p>
+  </div>
+  <div class="card">
+    <h3>Dictation</h3>
+    <div class="stat"><s>ring capture</s><b id="dicState">—</b></div>
+    <div class="stat"><s>blocks sent / dropped</s><b id="dicBlk">—</b></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn tonal sm" data-cfg="dict">status</button>
+      <button class="btn outline sm" data-cfg="dict auto on">auto on</button>
+      <button class="btn outline sm" data-cfg="dict auto off">auto off</button>
+    </div>
+    <p class="hint">Speech-to-text runs on the PC bench (whisper). The ring
+      streams audio there and types the transcript back.</p>
+  </div>
+  <div class="card">
+    <h3>Phone dictation → ring types</h3>
+    <p class="hint" style="margin-top:0">Uses <b>this phone's</b> speech
+      recogniser, then has the ring type the text on its active host — handy
+      for dictating into the PC without the bench.</p>
+    <div class="row">
+      <button class="btn" id="btnPhoneDict">&#127908; Speak</button>
+      <span class="badge" id="phoneDictState">idle</span>
+    </div>
+    <div class="field"><input id="phoneDictTxt" placeholder="transcript"><label>transcript (editable)</label></div>
+    <button class="btn tonal wide sm" id="btnPhoneType">ring types this</button>
+  </div>
+</section>
+
+<!-- ============ 8. MAPPING ============ -->
+<section class="page" id="p-map">
+  <div class="card">
+    <h3>Binding profiles</h3>
+    <div class="seg" id="profSeg">
+      <button data-p="0">P0</button><button data-p="1">P1</button>
+      <button data-p="2">P2</button><button data-p="3">P3</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="hint" style="margin:0;flex:1">save current bindings into</span>
+      <button class="btn outline sm" data-cfg="useprof save 0">P0</button>
+      <button class="btn outline sm" data-cfg="useprof save 1">P1</button>
+      <button class="btn outline sm" data-cfg="useprof save 2">P2</button>
+      <button class="btn outline sm" data-cfg="useprof save 3">P3</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Assign function</h3>
+    <div class="row"><span class="hint" style="margin:0;width:66px">source</span>
+      <select id="mSrc" style="flex:1"></select></div>
+    <div class="row" style="margin-top:8px"><span class="hint" style="margin:0;width:66px">capability</span>
+      <select id="mCap" style="flex:1"></select></div>
+    <div class="row" style="margin-top:8px"><span class="hint" style="margin:0;width:66px">subtype</span>
+      <select id="mSub" style="flex:1"></select></div>
+    <div class="row" style="margin-top:8px"><span class="hint" style="margin:0;width:66px">action</span>
+      <select id="mAct" style="flex:1"></select></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn sm" id="btnBind">bind</button>
+      <button class="btn outline sm" id="btnUnbind">unbind</button>
+      <button class="btn tonal sm" data-cfg="save">save to flash</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Active mappings <span class="r badge" id="mapCount">—</span></h3>
+    <div id="mapList" style="font-size:12px"></div>
+    <button class="btn tonal sm wide" data-cmd="m" style="margin-top:10px">refresh</button>
+  </div>
+</section>
+
+<!-- ============ 9. CONNECTIONS ============ -->
+<section class="page" id="p-conn">
+  <div class="card">
+    <h3>Hosts <span class="r badge" id="connCount">—</span></h3>
+    <div id="connList" style="font-size:12.5px">—</div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn tonal sm" data-cmd="L">refresh</button>
+      <button class="btn outline sm" data-cfg="active all">broadcast to all</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Bonds &amp; pairing</h3>
+    <div id="bondList" style="font-size:12.5px">—</div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sm" data-cfg="openpair">open pairing 60 s</button>
+      <button class="btn danger sm" id="btnForget">forget all bonds</button>
+    </div>
+    <p class="hint">Outside a pairing window the ring is invisible to scans and
+      only bonded hosts may connect.</p>
+  </div>
+  <div class="card">
+    <h3>Per-OS auto profile</h3>
+    <div class="row">
+      <select id="osSel" style="flex:1">
+        <option value="android">android</option>
+        <option value="windows">windows</option>
+        <option value="ios">ios</option>
+        <option value="macos">macos</option>
+        <option value="quest">quest</option>
+        <option value="visionos">visionos</option>
+      </select>
+      <select id="osProf">
+        <option value="0">P0</option><option value="1">P1</option>
+        <option value="2">P2</option><option value="3">P3</option>
+      </select>
+      <button class="btn sm" id="btnOsProf">map</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn tonal sm" id="btnHello">say “hello android” now</button>
+      <button class="btn outline sm" data-cfg="osprof">list rules</button>
+    </div>
+    <p class="hint">The app announces its platform on connect; the ring applies
+      that profile and learns this phone's address.</p>
+  </div>
+  <div class="card">
+    <h3>Firmware update (OTA)</h3>
+    <div class="stat"><s>running</s><b id="otaFw">—</b></div>
+    <div class="row" style="margin-top:8px">
+      <input type="file" id="otaFile" accept=".bin" style="font-size:12px;flex:1">
+    </div>
+    <div class="prog" style="margin:12px 0"><i id="otaBar"></i></div>
+    <div class="row">
+      <button class="btn sm" id="btnOta" disabled>upload to ring</button>
+      <span class="badge" id="otaState">idle</span>
+    </div>
+    <p class="hint" id="otaMsg">Pick a signed <b>zephyr.signed.bin</b>. It
+      uploads into the spare slot; the ring reboots into it for a trial boot
+      and auto-reverts unless it runs healthy for 30&nbsp;s.</p>
+  </div>
+</section>
+
+<!-- ============ 10. SETTINGS ============ -->
+<section class="page" id="p-set">
+  <div class="card">
+    <h3>Pointer</h3>
+    <div class="row"><span class="hint" style="margin:0;flex:1">speed preset</span>
+      <div class="seg" style="flex:none;width:190px" id="spdSeg">
+        <button data-s="50">50%</button><button data-s="100">100%</button>
+        <button data-s="150">150%</button></div></div>
+    <div class="row" style="margin-top:12px"><span class="hint" style="margin:0;flex:1">report rate cap</span>
+      <div class="seg" style="flex:none;width:230px" id="rateSeg">
+        <button data-r="0">off</button><button data-r="60">60</button>
+        <button data-r="90">90</button><button data-r="120">120</button></div></div>
+    <p class="hint">Bind SNIPER for hold-to-precision, SPEED_CYCLE to cycle
+      presets from the ring itself.</p>
+  </div>
+  <div class="card">
+    <h3>HID routing</h3>
+    <div class="seg" id="routeSeg">
+      <button data-h="ble">BLE (all hosts)</button>
+      <button data-h="auto">USB first</button>
+      <button data-h="usb">USB only</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <span class="hint" style="margin:0;flex:1">keyboard target</span>
+      <select id="typeTo" style="max-width:60%"></select>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Macros — typed by the ring on any host</h3>
+    <div class="field"><input id="mac1" maxlength="90"><label>macro 1</label></div>
+    <div class="field"><input id="mac2" maxlength="90"><label>macro 2</label></div>
+    <div class="field"><input id="mac3" maxlength="90"><label>macro 3</label></div>
+    <div class="field"><input id="mac4" maxlength="90"><label>macro 4</label></div>
+    <button class="btn wide sm" id="btnMacSave" style="margin-top:8px">store on ring</button>
+    <p class="hint">Stored in the ring's flash, plain text — don't put
+      passwords here. Fire them by binding MACRO_1…4 to a button or gesture.</p>
+  </div>
+  <div class="card">
+    <h3>Pairing &amp; power</h3>
+    <div class="row"><span class="hint" style="margin:0;flex:1">pairing confirm</span>
+      <div class="seg" style="flex:none;width:200px" id="authSeg">
+        <button data-a="auto">auto</button><button data-a="button">button</button></div></div>
+    <div class="row" style="margin-top:12px">
+      <div class="field" style="flex:1;margin:0"><input id="vdivIn" inputmode="numeric"><label>battery divider ×1000</label></div>
+      <button class="btn tonal sm" id="btnVdiv">set</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Persistence</h3>
+    <div class="row">
+      <button class="btn" data-cfg="save">save all to flash</button>
+      <button class="btn outline sm" data-cfg="warmboot">reboot ring</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn danger sm" id="btnWipe">factory reset settings</button>
+    </div>
+    <p class="hint">Factory reset clears bindings, calibration, wake-word model,
+      macros and profiles. Bonds are separate.</p>
+  </div>
+</section>
+
+<!-- ============ 11. FACTORY ============ -->
+<section class="page" id="p-fact">
+  <div class="card">
+    <h3>Factory test <span class="r badge" id="ftVerdict">—</span></h3>
+    <button class="btn wide" id="ftRunAll">run full test</button>
+    <table style="margin-top:12px"><thead><tr><th>component</th><th>result</th><th></th></tr></thead>
+      <tbody id="ftBody"></tbody></table>
+  </div>
+  <div class="card">
+    <h3>Manual checks</h3>
+    <p class="hint" style="margin-top:0">The self-test cannot press your buttons
+      with a finger, feel the magnet, or hear your voice. After a green table:
+      press every button (Buttons page), move the magnet (TrackPoint page),
+      spin the wheel (Scroll page), swipe the pad (Gestures), speak (Audio),
+      and type with dictation.</p>
+  </div>
+</section>
+
+<!-- ============ 12. DIAGNOSTICS ============ -->
+<section class="page" id="p-diag">
+  <div class="card">
+    <h3>Pipeline</h3>
+    <canvas class="chart" id="cvPipe"></canvas>
+    <div class="legend"><span><i style="background:var(--primary)"></i>HID/s</span>
+      <span><i style="background:var(--error)"></i>drops</span>
+      <span><i style="background:var(--warn)"></i>stale deltas</span></div>
+  </div>
+  <div class="card">
+    <h3>Counters</h3>
+    <div class="stat"><s>queue drops</s><b id="dgQd">—</b></div>
+    <div class="stat"><s>notify block (worst)</s><b id="dgNbm">—</b></div>
+    <div class="stat"><s>notify errors</s><b id="dgNef">—</b></div>
+    <div class="stat"><s>stale deltas dropped</s><b id="dgMdc">—</b></div>
+    <div class="stat"><s>touch frame errs</s><b id="dgTfe">—</b></div>
+    <div class="stat"><s>touch errA / errB</s><b id="dgTab">—</b></div>
+    <div class="stat"><s>tp / imu reconfigs</s><b id="dgRec">—</b></div>
+    <div class="stat"><s>USB HID sent</s><b id="dgUhs">—</b></div>
+    <div class="stat"><s>chars typed by ring</s><b id="dgKty">—</b></div>
+  </div>
+  <div class="card">
+    <h3>Memory <span class="r badge" id="memWrites">—</span></h3>
+    <div id="memBar" style="display:flex;height:22px;border-radius:6px;overflow:hidden;
+      background:var(--surface-3);font-size:9px;color:#fff"></div>
+    <div class="legend" id="memLegend"></div>
+    <div class="stat" style="margin-top:8px"><s>slot0 (current)</s><b id="memS0">—</b></div>
+    <div class="stat"><s>slot1 (backup)</s><b id="memS1">—</b></div>
+    <div class="stat"><s>settings free</s><b id="memFree">—</b></div>
+    <table style="margin-top:8px"><tbody id="memCfg"></tbody></table>
+    <button class="btn tonal sm wide" data-cfg="storage" style="margin-top:10px">refresh memory</button>
+  </div>
+  <div class="card">
+    <h3>Crash breadcrumb</h3>
+    <div id="dgFatal" class="hint" style="font-family:var(--mono)">—</div>
+    <button class="btn outline sm wide" data-cfg="kws crash" style="margin-top:8px">breadcrumb self-test</button>
+  </div>
+</section>
+
+<!-- ============ 13. EXPERIMENTS ============ -->
+<section class="page" id="p-exp">
+  <div class="card">
+    <h3>Drift soak</h3>
+    <p class="hint" style="margin-top:0">Hands off the ring entirely. Counts HID
+      reports emitted while nobody touches anything — any nonzero result is
+      phantom motion.</p>
+    <div class="row">
+      <button class="btn sm" id="dsStart">start 30 s</button>
+      <span class="badge" id="dsState">idle</span>
+    </div>
+    <div class="prog" style="margin-top:10px"><i id="dsBar"></i></div>
+    <div class="stat" style="margin-top:6px"><s>reports during soak</s><b id="dsCount">—</b></div>
+  </div>
+  <div class="card">
+    <h3>Ring keyboard test</h3>
+    <p class="hint" style="margin-top:0">If this phone is one of the ring's HID
+      hosts, the ring types into the box below — proving the keyboard path
+      end to end, including Arabic.</p>
+    <div class="row">
+      <button class="btn sm" id="ktLatin">type latin</button>
+      <button class="btn sm" id="ktArabic">type عربي</button>
+    </div>
+    <div class="field"><input id="ktField" placeholder="tap here first"><label>target field</label></div>
+  </div>
+  <div class="card">
+    <h3>Button rapid-press</h3>
+    <p class="hint" style="margin-top:0">Press one button as fast as you can for
+      five seconds; the census counts what the firmware actually confirmed.</p>
+    <div class="row">
+      <button class="btn sm" id="bpStart">start 5 s</button>
+      <span class="badge" id="bpState">idle</span>
+    </div>
+    <div class="stat" style="margin-top:6px"><s>confirmed presses</s><b id="bpCount">—</b></div>
+  </div>
+  <div class="card">
+    <h3>Link quality soak</h3>
+    <p class="hint" style="margin-top:0">Walk away from the host with the ring on
+      your finger. Telemetry gaps expose body-blocking and range limits.</p>
+    <div class="row">
+      <button class="btn sm" id="lqStart">start</button>
+      <span class="badge" id="lqState">idle</span>
+    </div>
+    <div class="stat" style="margin-top:6px"><s>rows received / expected</s><b id="lqRows">—</b></div>
+    <div class="stat"><s>worst gap</s><b id="lqGap">—</b></div>
+  </div>
+</section>
+
+<!-- ============ 14. CONSOLE ============ -->
+<section class="page" id="p-console">
+  <div class="chips" id="quickChips"></div>
+  <div class="console" id="console"></div>
+  <div class="row" style="margin-top:10px">
+    <div class="field" style="flex:1;margin:0">
+      <input id="cmdIn" autocomplete="off" autocapitalize="none" spellcheck="false"
+             autocorrect="off"><label>command</label>
+    </div>
+    <button class="btn sm" id="btnSend">send</button>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <button class="btn outline sm" id="btnClearLog">clear</button>
+    <button class="btn outline sm" id="btnCopyLog">copy log</button>
+  </div>
+</section>
 </main>
 
-<nav id="nav">
-  <button data-page="status" class="sel"><span class="ico">&#9679;</span>Status</button>
-  <button data-page="control"><span class="ico">&#127899;</span>Control</button>
-  <button data-page="macros"><span class="ico">&#9000;</span>Macros</button>
-  <button data-page="console"><span class="ico">&#8250;_</span>Console</button>
-</nav>
+<nav id="nav"></nav>
 
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet">
   <div class="handle"></div>
-  <h3 style="margin:0 0 6px;font-size:16px;font-weight:500">Settings</h3>
-  <div class="row" style="justify-content:space-between;padding:12px 0">
-    <span style="font-size:14px">Accent color</span>
-  </div>
+  <h3 style="margin:0 0 4px;font-size:16px;font-weight:500">Settings</h3>
+  <div class="row" style="padding:10px 0 0"><span style="font-size:13.5px">Accent</span></div>
   <div class="seeds" id="seeds"></div>
-  <div class="row" style="justify-content:space-between;padding:16px 0 6px">
-    <div>
-      <div style="font-size:14px">Auto&nbsp;<b>hello android</b> on connect</div>
-      <div style="font-size:12px;color:var(--on-surface-var)">applies your Android profile automatically</div>
-    </div>
-    <label class="switch"><input type="checkbox" id="swHello"><span class="track"></span><span class="thumb"></span></label>
+  <div class="row" style="justify-content:space-between;padding:10px 0">
+    <div><div style="font-size:13.5px">Announce platform on connect</div>
+      <div class="hint" style="margin:0">sends “hello android” so the ring loads its profile</div></div>
+    <label class="sw"><input type="checkbox" id="swHello"><span class="tr"></span><span class="th"></span></label>
   </div>
-  <div class="row" style="padding-top:14px">
-    <button class="btn tonal" id="btnDisconnect">Disconnect</button>
+  <div class="row" style="justify-content:space-between;padding:10px 0">
+    <div><div style="font-size:13.5px">Keep screen awake</div>
+      <div class="hint" style="margin:0">while connected, for soaks and tests</div></div>
+    <label class="sw"><input type="checkbox" id="swWake"><span class="tr"></span><span class="th"></span></label>
+  </div>
+  <div class="row" style="padding:14px 0 4px">
+    <button class="btn tonal sm" id="btnDisconnect">disconnect</button>
     <span style="flex:1"></span>
-    <span style="font-size:11px;color:var(--on-surface-var)" id="appVer"></span>
+    <span class="hint" id="appVer" style="margin:0"></span>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
-
 <script src="app.js"></script>
 </body>
 </html>

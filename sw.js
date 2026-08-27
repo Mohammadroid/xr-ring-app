@@ -1,6 +1,6 @@
 /* XR Ring PWA — offline shell. Bump CACHE on every release. */
-const CACHE = 'xr-ring-v1.0.0';
-const SHELL = ['.', 'index.html', 'app.js', 'manifest.webmanifest',
+const CACHE = 'xr-ring-v2.0.0';
+const SHELL = ['.', 'index.html', 'app.js', 'styles.css', 'manifest.webmanifest',
                'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {
