@@ -19,11 +19,14 @@ const CHR_SMP = 'da2e7828-fbce-4e01-ae9e-261174997c48';
 /* ---- tables mirrored from the firmware / bench ---- */
 const BTN_NAMES = ['LFT', 'MID', 'RHT', 'SET', 'RST', 'DN', 'UP'];
 const BTN_DEAD = [3, 4];                       /* pads proven dead on the dev board */
-const GESTS = [[1, 'Tap'], [3, 'Tap & hold'], [4, 'Swipe ←'], [5, 'Swipe →'],
-               [6, 'Swipe ↑'], [7, 'Swipe ↓'], [8, '2-finger tap'],
-               [10, '2F swipe ←'], [11, '2F swipe →'], [12, '2F swipe ↑'],
-               [13, '2F swipe ↓'], [14, 'Zoom in'], [15, 'Zoom out'],
-               [2, 'Double tap (n/a)']];
+/* Bindable gestures, in the order a user scans them. Labels come from
+ * the generated registry (xr_ids.js, from schemas/ids.yaml), so a
+ * firmware change cannot leave this list lying -- which it did: it
+ * said 'Double tap (n/a)' after the firmware shipped double-tap. */
+const GLBL = id => (self.XR_IDS ? (self.XR_IDS.GESTURES_LABEL[id] ||
+                                   ('gesture ' + id)) : ('gesture ' + id));
+const GESTS = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15]
+  .map(id => [id, GLBL(id)]);
 const FT_COMPONENTS = [['trackpoint', 'tp'], ['scroll', 'scroll'], ['imu', 'imu'],
   ['touch', 'touch'], ['mic', 'mic'], ['battery_adc', 'bat'],
   ['power_rail', 'vdd'], ['flash_settings', 'flash'], ['ble', 'ble'],
